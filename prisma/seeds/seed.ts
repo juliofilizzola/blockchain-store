@@ -1,4 +1,4 @@
-import { PrismaClient, TypeToken, WalletPayload } from '@prisma/client';
+import { PrismaClient, TypeToken } from '@prisma/client';
 import * as fs from 'fs';
 
 const prisma = new PrismaClient();
@@ -14,17 +14,22 @@ async function createUserAndWallet() {
       data,
     });
     const userData = await prisma.user.findMany();
-    const balanceInsert = [ 0, 122, 32323 ];
-    const typeTokenInsert = [ TypeToken.dogcoin, TypeToken.ripple, TypeToken.litecoin ];
-    const walletInsert = userData.map((value, index)=> ({
+    const balanceInsert = [0, 122, 32323];
+    const quantityTokenInsert = [0, 2548, 15478];
+    const typeTokenInsert = [
+      TypeToken.dogcoin,
+      TypeToken.ripple,
+      TypeToken.litecoin,
+    ];
+    const walletInsert = userData.map((value, index) => ({
       userId: value.id,
       typeToken: typeTokenInsert[index],
-      balance: balanceInsert[index]
+      balance: balanceInsert[index],
+      quantityToken: quantityTokenInsert[index],
     }));
     await prisma.wallet.createMany({
-      data: walletInsert
+      data: walletInsert,
     });
-
   }
 }
 
