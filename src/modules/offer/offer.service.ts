@@ -1,7 +1,13 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { CreateOfferDto } from './dto/create-offer.dto';
-import { UpdateOfferDto } from './dto/update-offer.dto';
 import { PrismaService } from '../../prisma/prisma.service';
+import { currentDate, nextDate } from '../../../utils/date';
+import { PaginationDto } from '../../../utils/pagination/dto/pagination.dto';
+import { paginateResponse } from '../../../utils/pagination/pagination';
 
 @Injectable()
 export class OfferService {
@@ -14,30 +20,62 @@ export class OfferService {
     });
 
     if (!user) {
-      throw new BadRequestException();
+      throw new NotFoundException({
+        message: 'user not found',
+      });
+    }
+
+    const countOfferDay = await this.prismaService.offer.count({
+      where: {
+        wallet: {
+          id: user.id,
+        },
+        createdAt: {
+          lte: nextDate(),
+          gte: currentDate(),
+        },
+      },
+    });
+
+    if (countOfferDay > 5) {
+      throw new BadRequestException({
+        message: 'user cannot create offer, limit exisd',
+      });
     }
 
     const wallet = await this.prismaService.wallet.findFirst({
       where: {
         id: createOfferDto.walletId,
+        user: {
+          id: user.id,
+        },
       },
     });
 
     if (!wallet) {
-      throw new BadRequestException();
+      throw new NotFoundException({
+        message: 'wallet not found',
+      });
     }
 
-    if (createOfferDto.price > wallet.balance) {
-      throw new BadRequestException();
+    if (
+      !wallet.quantityToken ||
+      createOfferDto.qunatity > wallet.quantityToken
+    ) {
+      throw new BadRequestException({
+        message: 'wallet does not have enough token',
+      });
     }
 
     return this.prismaService.offer.create({
       data: {
-        user: {
+        wallet: {
           connect: {
-            id: user.id,
+            id: wallet.id,
           },
         },
+        expiration: nextDate(),
+        quantity: createOfferDto.qunatity,
         price: createOfferDto.price,
         name: createOfferDto.name,
         description: createOfferDto.description,
@@ -45,19 +83,140 @@ export class OfferService {
     });
   }
 
-  findAll() {
-    return 'This action returns all offer';
+  async findAll(pagination?: PaginationDto) {
+    if (pagination) {
+      const { limit, page } = pagination;
+
+      const result = await this.prismaService.$transaction([
+        this.prismaService.offer.count({
+          where: {
+            createdAt: {
+              lte: nextDate(),
+              gte: currentDate(),
+            },
+          },
+        }),
+        this.prismaService.offer.findMany({
+          where: {
+            createdAt: {
+              lte: nextDate(),
+              gte: currentDate(),
+            },
+          },
+          skip: (page - 1) * limit,
+          take: limit,
+          orderBy: {
+            createdAt: 'desc',
+          },
+        }),
+      ]);
+
+      return paginateResponse(result, page, limit);
+    }
+
+    return this.prismaService.offer.findMany({
+      where: {
+        createdAt: {
+          lte: nextDate(),
+          gte: currentDate(),
+        },
+      },
+    });
+  }
+  async findAllByUser(userId: string, pagination?: PaginationDto) {
+    if (pagination) {
+      const { limit, page } = pagination;
+
+      const result = await this.prismaService.$transaction([
+        this.prismaService.offer.count({
+          where: {
+            wallet: {
+              user: {
+                id: userId,
+              },
+            },
+            createdAt: {
+              lte: nextDate(),
+              gte: currentDate(),
+            },
+          },
+        }),
+        this.prismaService.offer.findMany({
+          where: {
+            wallet: {
+              user: {
+                id: userId,
+              },
+            },
+            createdAt: {
+              lte: nextDate(),
+              gte: currentDate(),
+            },
+          },
+          skip: (page - 1) * limit,
+          take: limit,
+          orderBy: {
+            createdAt: 'desc',
+          },
+        }),
+      ]);
+
+      return paginateResponse(result, page, limit);
+    }
+
+    return this.prismaService.offer.findMany({
+      where: {
+        wallet: {
+          user: {
+            id: userId,
+          },
+        },
+        createdAt: {
+          lte: nextDate(),
+          gte: currentDate(),
+        },
+      },
+    });
   }
 
-  findOne(id: number) {
-    return `This action returns a #${id} offer`;
+  async findOne(id: string) {
+    return this.prismaService.offer.findFirst({
+      where: {
+        id,
+      },
+    });
   }
 
-  update(id: number, updateOfferDto: UpdateOfferDto) {
-    return `This action updates a #${id} offer`;
-  }
+  async remove(id: string, userId: string) {
+    const offer = await this.prismaService.offer.findFirst({
+      where: {
+        id,
+      },
+      include: {
+        wallet: {
+          include: {
+            user: true,
+          },
+        },
+      },
+    });
 
-  remove(id: number) {
-    return `This action removes a #${id} offer`;
+    if (!offer) {
+      throw new NotFoundException({
+        message: 'offer not found',
+      });
+    }
+
+    if (offer.wallet.user.id !== userId) {
+      throw new BadRequestException({
+        message: 'delete denied',
+      });
+    }
+
+    return this.prismaService.offer.delete({
+      where: {
+        id,
+      },
+    });
   }
 }
