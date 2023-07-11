@@ -11,14 +11,14 @@ datasource db {
 }
 
 model User {
-  id        String    @id @default(uuid())
+  id        String     @id @default(uuid())
   name      String
-  email     String    @unique
+  email     String     @unique
   phone     String
   wallet    Wallet[]
-  offer     Offer[]
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
+  purchase  Purchase[]
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
   deletedAt DateTime?
 }
 
@@ -29,25 +29,48 @@ model Wallet {
   quantityToken Int       @default(0)
   user          User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   userId        String
+  offer         Offer[]
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
   deletedAt     DateTime?
 }
 
 model Offer {
-  id          String    @id @default(uuid())
+  id          String     @id @default(uuid())
   name        String
   price       Int
   description String
-  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  userId      String
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
+  expiration  DateTime
+  quantity    Int // quantidade de token a ser vendido
+  wallet      Wallet     @relation(fields: [walletId], references: [id], onDelete: Cascade)
+  walletId    String
+  purchase    Purchase[]
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
   deletedAt   DateTime?
+}
+
+model Purchase {
+  id            String        @id @default(uuid())
+  offer         Offer         @relation(fields: [offerId], references: [id], onDelete: Cascade)
+  offerId       String
+  quantity      Int
+  methodPayment MethodPaymant
+  user          User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId        String
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+  deletedAt     DateTime?
 }
 
 enum TypeToken {
   dogcoin
   litecoin
   ripple
+}
+
+enum MethodPaymant {
+  pix
+  creditCard
+  debitCard
 }
