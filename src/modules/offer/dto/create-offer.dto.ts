@@ -15,16 +15,25 @@ export class CreateOfferDto {
   @IsNotEmpty({ message: 'uuid wallet is required' })
   walletId: string;
 
-  @IsString()
-  @IsNotEmpty()
+  @IsString({ message: 'name has be string' })
+  @IsNotEmpty({
+    message: 'name is required',
+  })
   name: string;
+
+  @IsNotEmpty({ message: 'quantity is required' })
+  @IsNumber({}, { message: 'quantity is number' })
+  @IsPositive({ message: 'quantity cannot negative' })
+  qunatity: number;
 
   @IsNotEmpty({ message: 'price is required' })
   @IsNumber({}, { message: 'price is number' })
   @IsPositive({ message: 'price cannot negative' })
   price: number;
 
-  @IsString()
-  @IsNotEmpty()
+  @IsString({ message: 'description has be string' })
+  @IsNotEmpty({
+    message: 'description is required',
+  })
   description: string;
 }
