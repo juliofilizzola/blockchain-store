@@ -1,7 +1,15 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  Param,
+  Post,
+  Query,
+} from '@nestjs/common';
 import { OfferService } from './offer.service';
 import { CreateOfferDto } from './dto/create-offer.dto';
-import { UpdateOfferDto } from './dto/update-offer.dto';
+import { PaginationDto } from '../../../utils/pagination/dto/pagination.dto';
 
 @Controller('offer')
 export class OfferController {
@@ -13,22 +21,29 @@ export class OfferController {
   }
 
   @Get()
-  findAll() {
-    return this.offerService.findAll();
+  findAll(@Query() { page, limit }: PaginationDto) {
+    const pagination: PaginationDto =
+      page && limit ? { page: Number(page), limit: Number(limit) } : undefined;
+    return this.offerService.findAll(pagination);
   }
 
-  @Get(':id')
+  @Get('/byUser/:userId')
+  findAllByUserId(
+    @Param('userId') userId: string,
+    @Query() { page, limit }: PaginationDto,
+  ) {
+    const pagination: PaginationDto =
+      page && limit ? { page: Number(page), limit: Number(limit) } : undefined;
+    return this.offerService.findAllByUser(userId, pagination);
+  }
+
+  @Get('all/:id')
   findOne(@Param('id') id: string) {
-    return this.offerService.findOne(+id);
+    return this.offerService.findOne(id);
   }
 
-  @Patch(':id')
-  update(@Param('id') id: string, @Body() updateOfferDto: UpdateOfferDto) {
-    return this.offerService.update(+id, updateOfferDto);
-  }
-
-  @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.offerService.remove(+id);
+  @Delete('remove/:id/:userId')
+  remove(@Param('id') id: string, @Param('userId') userId: string) {
+    return this.offerService.remove(id, userId);
   }
 }
