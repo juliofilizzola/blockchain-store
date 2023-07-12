@@ -41,6 +41,7 @@ model Offer {
   price       Int
   description String
   expiration  DateTime
+  active      Boolean    @default(true)
   quantity    Int // quantidade de token a ser vendido
   wallet      Wallet     @relation(fields: [walletId], references: [id], onDelete: Cascade)
   walletId    String
@@ -56,6 +57,7 @@ model Purchase {
   offerId       String
   quantity      Int
   methodPayment MethodPaymant
+  amountPaid    Int
   user          User          @relation(fields: [userId], references: [id], onDelete: Cascade)
   userId        String
   createdAt     DateTime      @default(now())
