@@ -24,7 +24,7 @@ export class CreateOfferDto {
   @IsNotEmpty({ message: 'quantity is required' })
   @IsNumber({}, { message: 'quantity is number' })
   @IsPositive({ message: 'quantity cannot negative' })
-  qunatity: number;
+  quantity: number;
 
   @IsNotEmpty({ message: 'price is required' })
   @IsNumber({}, { message: 'price is number' })

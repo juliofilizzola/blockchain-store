@@ -2,13 +2,13 @@ import { MethodPaymant } from '@prisma/client';
 import { IsEnum, IsInt, IsNotEmpty, IsPositive, IsUUID } from 'class-validator';
 
 export class CreatePurchaseDto {
-  @IsUUID('4', { message: 'uuid user is invalid' })
-  @IsNotEmpty({ message: 'uuid user is required' })
-  userId: string;
-
   @IsUUID('4', { message: 'uuid offer is invalid' })
   @IsNotEmpty({ message: 'uuid offer is required' })
   offerId: string;
+
+  @IsUUID('4', { message: 'uuid wallet is invalid' })
+  @IsNotEmpty({ message: 'uuid wallet is required' })
+  walletId: string;
 
   @IsInt({
     message: 'quantity has be int',

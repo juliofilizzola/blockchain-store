@@ -11,18 +11,6 @@ import { nextDate } from '../../../utils/date';
 export class PurchaseService {
   constructor(private readonly prismaService: PrismaService) {}
   async create(createPurchaseDto: CreatePurchaseDto) {
-    const user = await this.prismaService.user.findFirst({
-      where: {
-        id: createPurchaseDto.userId,
-      },
-    });
-
-    if (!user) {
-      throw new NotFoundException({
-        message: 'user not found',
-      });
-    }
-
     const offer = await this.prismaService.offer.findFirst({
       where: {
         id: createPurchaseDto.offerId,
@@ -38,7 +26,7 @@ export class PurchaseService {
       });
     }
 
-    if (offer.expiration.toString() > nextDate() || !offer.active) {
+    if (offer.expiration > new Date(nextDate()) || !offer.active) {
       throw new BadRequestException({
         message: 'offer invalid',
       });
@@ -47,6 +35,24 @@ export class PurchaseService {
     if (createPurchaseDto.quantity > offer.quantity) {
       throw new BadRequestException({
         message: 'quantity above available',
+      });
+    }
+
+    const wallet = await this.prismaService.wallet.findFirst({
+      where: {
+        id: createPurchaseDto.walletId,
+      },
+    });
+
+    if (!wallet) {
+      throw new NotFoundException({
+        message: 'wallet not found',
+      });
+    }
+
+    if (wallet.typeToken != offer.wallet.typeToken) {
+      throw new BadRequestException({
+        message: 'wallet token invalid',
       });
     }
 
@@ -78,6 +84,17 @@ export class PurchaseService {
         },
         data: {
           balance: offer.wallet.balance + createPurchaseDto.amount,
+          quantityToken:
+            offer.wallet.quantityToken - createPurchaseDto.quantity,
+        },
+      });
+
+      await prisma.wallet.update({
+        where: {
+          id: wallet.id,
+        },
+        data: {
+          quantityToken: createPurchaseDto.quantity,
         },
       });
 
@@ -85,7 +102,7 @@ export class PurchaseService {
         data: {
           user: {
             connect: {
-              id: user.id,
+              id: wallet.userId,
             },
           },
           amountPaid: createPurchaseDto.amount,

@@ -60,7 +60,7 @@ export class OfferService {
 
     if (
       !wallet.quantityToken ||
-      createOfferDto.qunatity > wallet.quantityToken
+      createOfferDto.quantity > wallet.quantityToken
     ) {
       throw new BadRequestException({
         message: 'wallet does not have enough token',
@@ -75,7 +75,7 @@ export class OfferService {
           },
         },
         expiration: nextDate(),
-        quantity: createOfferDto.qunatity,
+        quantity: createOfferDto.quantity,
         price: createOfferDto.price,
         name: createOfferDto.name,
         description: createOfferDto.description,
