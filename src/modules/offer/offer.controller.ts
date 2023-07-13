@@ -27,7 +27,7 @@ export class OfferController {
     return this.offerService.findAll(pagination);
   }
 
-  @Get('/byUser/:userId')
+  @Get('byUser/:userId')
   findAllByUserId(
     @Param('userId') userId: string,
     @Query() { page, limit }: PaginationDto,
@@ -37,7 +37,7 @@ export class OfferController {
     return this.offerService.findAllByUser(userId, pagination);
   }
 
-  @Get('all/:id')
+  @Get('one/:id')
   findOne(@Param('id') id: string) {
     return this.offerService.findOne(id);
   }
